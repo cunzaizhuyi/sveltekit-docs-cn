@@ -1,18 +1,18 @@
-## 路由
+# 路由
 
 SvelteKit的核心是一个基于文件系统的路由器。
 路由是通过目录来定义的。
 
 - `src/routes` 根路由
 - `src/routes/about` 创建一个 `/about` 路由
-- `src/routes/blog/[slug]` 创建一个带`slug`参数的路由, 用于动态加载数据，比如当用户请求`/blog/hello-world`这样的页面的时候。
+- `src/routes/blog/[slug]` 创建一个带`slug`参数的路由，用于动态加载数据，比如当用户请求`/blog/hello-world`这样的页面的时候。
 
 > 你可以通过编辑[项目配置](/docs/configuration) 修改 `src/routes` 到一个不同的目录。
 
 每个路由包含一个或多个 _路由文件_，路由文件是通过`+`前缀识别的。
-### +page
+## +page
 
-#### +page.svelte
+### +page.svelte
 
 
 一个`+page.svelte`组件定义了一个应用的页面。
@@ -45,9 +45,9 @@ SvelteKit的核心是一个基于文件系统的路由器。
 
 > 请注意 SvelteKit 使用 `<a>` 元素 在路由间导航, 而不是让框架造个新轮子，如 `<Link>` 组件。
 
-#### +page.js
+### +page.js
 
-Often, a page will need to load some data before it can be rendered. For this, we add a `+page.js` (or `+page.ts`, if you're TypeScript-inclined) module that exports a `load` function:
+通常来说，一个页面在渲染前需要加载一些数据，为此，我们可以添加`+page.js`或`+page.ts`，在其内部导出一个`load`函数
 
 ```js
 /// file: src/routes/blog/[slug]/+page.js
@@ -66,19 +66,22 @@ export function load({ params }) {
 }
 ```
 
-This function runs alongside `+page.svelte`, which means it runs on the server during server-side rendering and in the browser during client-side navigation. See [`load`](/docs/load) for full details of the API.
+load函数和 `+page.svelte`同时运行, 
+意味着既在服务端渲染的时候在服务端运行，也在客户端导航时在浏览器侧运行. 
+关于load函数更多细节请参考 [`load`](/docs/load)。
 
-As well as `load`, `page.js` can export values that configure the page's behaviour:
+和`load`一样，`page.js`还可以导出一些值，用于配置该页面的行为：
 
 - `export const prerender = true` or `false` or `'auto'`
 - `export const ssr = true` or `false`
 - `export const csr = true` or `false`
 
-You can find more information about these in [page options](/docs/page-options).
+更多配置信息请参考 [page options](/docs/page-options).
 
-#### +page.server.js
+### +page.server.js
 
-If your `load` function can only run on the server — for example, if it needs to fetch data from a database or you need to access private [environment variables](/docs/modules#$env-static-private) like API keys — then you can rename `+page.js` to `+page.server.js` and change the `PageLoad` type to `PageServerLoad`.
+如果你的`load`函数只能在服务端运行，比如，如果它需要从数据库取数据，或者访问私有[环境变量](/docs/modules#$env-static-private)，
+你可以将`+page.js`改名为`+page.server.js`，然后修改`PageLoad` type为`PageServerLoad`。
 
 ```js
 /// file: src/routes/blog/[slug]/+page.server.js
@@ -109,15 +112,19 @@ export async function load({ params }) {
 }
 ```
 
-During client-side navigation, SvelteKit will load this data from the server, which means that the returned value must be serializable using [devalue](https://github.com/rich-harris/devalue).
+客户端导航时, SvelteKit会从服务端加载数据, 
+这意味返回值必须可被序列化的， 参考 [devalue](https://github.com/rich-harris/devalue)。
 
-Like `+page.js`, `+page.server.js` can export [page options](/docs/page-options) — `prerender`, `ssr` and `csr`.
+和 `+page.js`一样, `+page.server.js` 可以导出 [page options](/docs/page-options) — `prerender`, `ssr` 和 `csr`.
 
-A `+page.server.js` file can also export _actions_. If `load` lets you read data from the server, `actions` let you write data _to_ the server using the `<form>` element. To learn how to use them, see the [form actions](/docs/form-actions) section.
+A `+page.server.js` 文件也能导出 _actions_. 
+`load` 让你从服务端取数据, `actions` 让你向服务端写数据，通过使用 `<form>` 元素。
+看 [form actions](/docs/form-actions) 部分，学习怎么用.
 
-### +error
+## +error
 
-If an error occurs during `load`, SvelteKit will render a default error page. You can customise this error page on a per-route basis by adding an `+error.svelte` file:
+如果 `load`时错误发生, SvelteKit 会渲染一个默认的错误页。 
+你可以通过每个路由下的`+error.svelte`文件，自定义错误页：
 
 ```svelte
 /// file: src/routes/blog/[slug]/+error.svelte
@@ -127,24 +134,31 @@ If an error occurs during `load`, SvelteKit will render a default error page. Yo
 
 <h1>{$page.status}: {$page.error.message}</h1>
 ```
+SvelteKit会逐层向上遍历目录树，寻找`+error.svelte`文件。比如，
+如果上面这个文件不存在， 它会试着找 `src/routes/blog/+error.svelte` 和 `src/routes/+error.svelte` 来渲染错误页。
+如果这种向上查找也失败了 (或者错误是root`+layout`下的`load`函数抛出的，, root`+layout` 是位于root `+error` 之上的，"之上"指的是上一层), 
+SvelteKit会渲染一个静态的错误页，静态错误页你也可以自定义，需要定义为`src/error.html` 文件。
 
-SvelteKit will 'walk up the tree' looking for the closest error boundary — if the file above didn't exist it would try `src/routes/blog/+error.svelte` and `src/routes/+error.svelte` before rendering the default error page. If _that_ fails (or if the error was thrown from the `load` function of the root `+layout`, which sits 'above' the root `+error`), SvelteKit will bail out and render a static fallback error page, which you can customise by creating a `src/error.html` file.
+## +layout
 
-### +layout
+目前为了，我们把pages看成一个完整的组件。
+当需要导航的时候，当前的`+page.svelte`组件会被销毁，一个新的`+page.svelte`会取代它。
 
-So far, we've treated pages as entirely standalone components — upon navigation, the existing `+page.svelte` component will be destroyed, and a new one will take its place.
+但有许多应用是这样的，有一些页面元素会出现在每一个页面，比如顶部导航菜单或者页面底部元素。
+这时候应该使用_layouts_，而不是重复地在每个`+page.svelte`里都加上这些元素。
 
-But in many apps, there are elements that should be visible on _every_ page, such as top-level navigation or a footer. Instead of repeating them in every `+page.svelte`, we can put them in _layouts_.
+### +layout.svelte
 
-#### +layout.svelte
-
-To create a layout that applies to every page, make a file called `src/routes/+layout.svelte`. The default layout (the one that SvelteKit uses if you don't bring your own) looks like this...
+为了创建一个可以应用到每一个页面的layout，需要新建一个文件叫做`src/routes/+layout.svelte`。
+默认的layout（SvelteKit默认）基本上长这样：
 
 ```html
 <slot></slot>
 ```
 
-...but we can add whatever markup, styles and behaviour we want. The only requirement is that the component includes a `<slot>` for the page content. For example, let's add a nav bar:
+我们可以添加任何我们需要的标签、样式、行为。
+唯一的必要条件是，这个组件要有一个`<slot>`，用来填充页面内容。
+比如，如果我们有下面的`/`, `/about` 和 `/settings`三个页面的话，我们可以添加下面的全局顶部导航条:
 
 ```html
 /// file: src/routes/+layout.svelte
@@ -156,8 +170,6 @@ To create a layout that applies to every page, make a file called `src/routes/+l
 
 <slot></slot>
 ```
-
-If we create pages for `/`, `/about` and `/settings`...
 
 ```html
 /// file: src/routes/+page.svelte
@@ -174,11 +186,13 @@ If we create pages for `/`, `/about` and `/settings`...
 <h1>Settings</h1>
 ```
 
-...the nav will always be visible, and clicking between the three pages will only result in the `<h1>` being replaced.
+这个导航条是始终可见的。每次切换菜单项，`<h1>`会被替换掉。
 
-Layouts can be _nested_. Suppose we don't just have a single `/settings` page, but instead have nested pages like `/settings/profile` and `/settings/notifications` with a shared submenu (for a real-life example, see [github.com/settings](https://github.com/settings)).
+Layouts可以嵌套。
+假如我们并没有一个`/settings`页面，而是有俩嵌套页面叫`/settings/profile`和`/settings/notifications`，
+这俩嵌套页面有一个共同的子菜单(举个真实的例子，请看 [github.com/settings](https://github.com/settings))。
 
-We can create a layout that only applies to pages below `/settings` (while inheriting the root layout with the top-level nav):
+这时候我们可以创建一个layout，放在`/settings`目录下，
 
 ```svelte
 /// file: src/routes/settings/+layout.svelte
@@ -198,9 +212,9 @@ We can create a layout that only applies to pages below `/settings` (while inher
 <slot></slot>
 ```
 
-#### +layout.js
+### +layout.js
 
-Just like `+page.svelte` loading data from `+page.js`, your `+layout.svelte` component can get data from a [`load`](/docs/load) function in `+layout.js`.
+就像`+page.svelte`可以从`+page.js`的load函数加载数据，`+layout.svelte`也可以从`+layout.js`的load函数加载数据。
 
 ```js
 /// file: src/routes/settings/+layout.js
@@ -215,9 +229,9 @@ export function load() {
 }
 ```
 
-If a `+layout.js` exports [page options](/docs/page-options) — `prerender`, `ssr` and `csr` — they will be used as defaults for child pages.
+如果 `+layout.js` 导出 [page options](/docs/page-options) — `prerender`, `ssr` 和 `csr` — 所有子页面都可用。
 
-Data returned from a layout's `load` function is also available to all its child pages:
+所有子页面都可以使用从layout's `load` 函数返回的数据:
 
 ```svelte
 /// file: src/routes/settings/profile/+page.svelte
@@ -229,19 +243,25 @@ Data returned from a layout's `load` function is also available to all its child
 </script>
 ```
 
-> Often, layout data is unchanged when navigating between pages. SvelteKit will intelligently re-run [`load`](/docs/load) functions when necessary.
+> Often, layout data is unchanged when navigating between pages. 
+> SvelteKit will intelligently re-run [`load`](/docs/load) functions when necessary.
 
-#### +layout.server.js
+### +layout.server.js
 
-To run your layout's `load` function on the server, move it to `+layout.server.js`, and change the `LayoutLoad` type to `LayoutServerLoad`.
+为了运行`load`函数在服务器端，将其移动到`+layout.server.js`文件，并修改`LayoutLoad` type 为 `LayoutServerLoad`。
 
-Like `+layout.js`, `+layout.server.js` can export [page options](/docs/page-options) — `prerender`, `ssr` and `csr`.
+类似于 `+layout.js`, `+layout.server.js` 也可以导出 [page options](/docs/page-options) — `prerender`, `ssr` 和 `csr`。
 
-### +server
+## +server
 
-As well as pages, you can define routes with a `+server.js` file (sometimes referred to as an 'API route' or an 'endpoint'), which gives you full control over the response. Your `+server.js` file (or `+server.ts`) exports functions corresponding to HTTP verbs like `GET`, `POST`, `PATCH`, `PUT` and `DELETE` that take a `RequestEvent` argument and return a [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) object.
+除了pages可以定义路由, 
+我们也可以用一个 `+server.js` 文件定义路由 (叫做'API route' 或者 'endpoint')， 
+这种路由使用可以全面控制Response。
+ `+server.js` 文件 (或`+server.ts`) 会导出一个函数，
+函数名使用HTTP 动词 比如 `GET`, `POST`, `PATCH`, `PUT` 和 `DELETE` ，
+函数接受一个 `RequestEvent` 参数 ， 返回 一个 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) 对象。
 
-For example we could create an `/api/random-number` route with a `GET` handler:
+比如我们用`GET` 处理器 创建一个`/api/random-number`路由。
 
 ```js
 /// file: src/routes/api/random-number/+server.js
@@ -264,13 +284,16 @@ export function GET({ url }) {
 }
 ```
 
-The first argument to `Response` can be a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream), making it possible to stream large amounts of data or create server-sent events (unless deploying to platforms that buffer responses, like AWS Lambda).
+ `Response` 第一个参数可以是 [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream), 
+making it possible to stream large amounts of data or create server-sent events
+(unless deploying to platforms that buffer responses, like AWS Lambda).
 
-You can use the `error`, `redirect` and `json` methods from `@sveltejs/kit` for convenience (but you don't have to). Note that `throw error(..)` only returns a plain text error response.
+可以使用 `@sveltejs/kit` 的 `error`, `redirect` 和 `json`  (不一定非要用)。 
+请注意 `throw error(..)` 只返回一个纯文本响应。
 
-#### Receiving data
+### 取数据
 
-By exporting `POST`/`PUT`/`PATCH`/`DELETE` handlers, `+server.js` files can be used to create a complete API:
+通过导出 `POST`/`PUT`/`PATCH`/`DELETE` 处理器, `+server.js` 文件可以用于创建一个完整的API:
 
 ```svelte
 /// file: src/routes/add/+page.svelte
@@ -310,20 +333,25 @@ export async function POST({ request }) {
 }
 ```
 
-> In general, [form actions](/docs/form-actions) are a better way to submit data from the browser to the server.
+> 通常来说, [form actions](/docs/form-actions) 是一个从浏览器到服务器提交数据的更好的方式。
 
-#### Content negotiation
+### 内容协商
 
-`+server.js` files can be placed in the same directory as `+page` files, allowing the same route to be either a page or an API endpoint. To determine which, SvelteKit applies the following rules:
+`+server.js` 文件可以和 `+page` 文件放在同一目录下, 
+即允许同一个路由 或使用page路由 或使用api路由。
+SvelteKit定了一些规则，用以决定用哪个路由。
 
-- `PUT`/`PATCH`/`DELETE` requests are always handled by `+server.js` since they do not apply to pages
-- `GET`/`POST` requests are treated as page requests if the `accept` header prioritises `text/html` (in other words, it's a browser page request), else they are handled by `+server.js`
+- `PUT`/`PATCH`/`DELETE` 请求 总会被 `+server.js` 处理。
+- `GET`/`POST` 如果请求头有`accept` ：`text/html`则被视为页面请求，(换句话说, 这是个浏览器页面请求), 否则会被 `+server.js`处理。
 
-### $types
+## $types
 
-Throughout the examples above, we've been importing types from a `$types.d.ts` file. This is a file SvelteKit creates for you in a hidden directory if you're using TypeScript (or JavaScript with JSDoc type annotations) to give you type safety when working with your root files.
+通过上面例子可以看到，我们从一个`$types.d.ts`文件导入了types。
+当你使用TS时，这个文件是SvelteKit帮我们创建的，放在在隐藏目录.
+（如果用js, 会用JSDoc type annotations)
 
-For example, annotating `export let data` with `PageData` (or `LayoutData`, for a `+layout.svelte` file) tells TypeScript that the type of `data` is whatever was returned from `load`:
+比如, 用 `PageData`注解 `export let data`  。
+(或者 `LayoutData`, 注解 `+layout.svelte` 文件) 会告诉TS `data`的类型是 来自于`load` 返回的类型:
 
 ```svelte
 /// file: src/routes/blog/[slug]/+page.svelte
@@ -333,10 +361,13 @@ For example, annotating `export let data` with `PageData` (or `LayoutData`, for 
 </script>
 ```
 
-In turn, annotating the `load` function with `PageLoad`, `PageServerLoad`, `LayoutLoad` or `LayoutServerLoad` (for `+page.js`, `+page.server.js`, `+layout.js` and `+layout.server.js` respectively) ensures that `params` and the return value are correctly typed.
+同时, 用 `PageLoad`, `PageServerLoad`, `LayoutLoad` or `LayoutServerLoad` 注解`load`函数
+(分别在 `+page.js`, `+page.server.js`, `+layout.js` 和 `+layout.server.js`文件)
+对 `params` and 返回值进行类型定义。
 
-### Other files
+## Other files
 
-Any other files inside a route directory are ignored by SvelteKit. This means you can colocate components and utility modules with the routes that need them.
+一个路由目录下的任何其他文件会被SvelteKit忽略。
+这意味着你可以把组件和工具模块放到需要的路由目录下。
 
-If components and modules are needed by multiple routes, it's a good idea to put them in [`$lib`](/docs/modules#$lib).
+如果是一些通用的（被多个路由使用的）组件和模块，更好的建议是把它们放到[`$lib`](/docs/modules#$lib)目录。

@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /docs/00-introduction
+      link: /docs/00-introduction.md
     - theme: alt
       text: View on GitHub
       link: https://github.com/cunzaizhuyi/sveltekit-docs-cn
