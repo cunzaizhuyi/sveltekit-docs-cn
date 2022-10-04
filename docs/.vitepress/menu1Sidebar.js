@@ -11,7 +11,7 @@ export default [
             { text: '项目结构', link: `${docsPath}/01-project-structure.md` },
             { text: 'web标准', link: `${docsPath}/02-web-standards.md` },
             { text: '路由', link: `${docsPath}/03-routing.md` },
-            // { text: '高级路由', link: `${docsPath}/advanced-routing.md` },
+            { text: '高级路由', link: `${docsPath}/04-advanced-routing.md` },
             // { text: '加载', link: `${docsPath}/load.md` },
             // { text: '路由', link: `${docsPath}/form-actions.md` },
             // { text: 'hooks', link: `${docsPath}/hooks.md` },
