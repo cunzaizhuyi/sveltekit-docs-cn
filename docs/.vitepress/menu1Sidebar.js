@@ -12,7 +12,7 @@ export default [
             { text: 'web标准', link: `${docsPath}/02-web-standards.md` },
             { text: '路由', link: `${docsPath}/03-routing.md` },
             { text: '高级路由', link: `${docsPath}/04-advanced-routing.md` },
-            // { text: '加载', link: `${docsPath}/load.md` },
+            { text: '加载数据', link: `${docsPath}/05-load.md` },
             // { text: '路由', link: `${docsPath}/form-actions.md` },
             // { text: 'hooks', link: `${docsPath}/hooks.md` },
             // { text: '服务端模块', link: `${docsPath}/server-only-modules.md` },
