@@ -8,6 +8,7 @@ export default {
     title: 'sveltekit', // 所有文档的浏览器标签title
     description: 'sveltekit中文文档', // 会渲染成<meta>标签，SEO用
 
+    ignoreDeadLinks: true,
     themeConfig: {
 
         siteTitle: 'sveltekit',
