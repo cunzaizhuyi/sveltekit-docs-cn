@@ -91,10 +91,10 @@ export async function handle({ event, resolve }) {
 
 ### handleFetch
 
-你可以用这个函数修改或替换一个`load`函数里的`fetch`请求。
+你可以用这个函数修改或替换`load`函数里的`fetch`请求。
 
-Or your `load` function might make a request to a public URL like `https://api.yourapp.com` when the user performs a client-side navigation to the respective page,
-but during SSR it might make sense to hit the API directly (bypassing whatever proxies and load balancers sit between it and the public internet).
+比如你在某个页面导航时，可能请求是使用的公共URL，比如`https://api.yourapp.com`。
+在SSR时，把该请求转化成API可能很有意义。（能绕过一堆代理 且 load balancers sit between it and the public internet）
 
 ```js
 /** @type {import('@sveltejs/kit').HandleFetch} */
@@ -133,16 +133,18 @@ export async function handleFetch({ event, request, fetch }) {
 
 ## Shared hooks
 
-The following can be added to `src/hooks.server.js` _and_ `src/hooks.client.js`:
+指的是既可以添加到`src/hooks.server.js`又可以添加到`src/hooks.client.js`的hooks。
 
 ### handleError
 
-If an unexpected error is thrown during loading or rendering, this function will be called with the `error` and the `event`. This allows for two things:
+如果在loading或rendering期间有未预期的错误抛出，就会调用该函数，该函数的参数，有俩字段：`error` 和 `event`。
 
-- you can log the error
-- you can generate a custom representation of the error that is safe to show to users, omitting sensitive details like messages and stack traces. The returned value becomes the value of `$page.error`. It defaults to `{ message: 'Not Found' }` in case of a 404 (you can detect them through `event.routeId` being `null`) and to `{ message: 'Internal Error' }` for everything else. To make this type-safe, you can customize the expected shape by declaring an `App.Error` interface (which must include `message: string`, to guarantee sensible fallback behavior).
+你可以用该函数做下面两件事:
 
-The following code shows an example of typing the error shape as `{ message: string; code: string }` and returning it accordingly from the `handleError` functions:
+- 你可以打印error
+- 你可以构造一个自定义的error对象, 包含一些细节信息和错误堆栈信息。返回值就是`$page.error`的值，假如是404默认是`{ message: 'Not Found' }`。
+
+下面代码展示了一个例子，错误对象被构造为`{ message: string; code: string }`，从`handleError`函数返回。
 
 ```ts
 /// file: src/app.d.ts
@@ -194,8 +196,9 @@ export function handleError({ error, event }) {
 }
 ```
 
-> In `src/hooks.client.js`, the type of `handleError` is `HandleClientError` instead of `HandleServerError`, and `event` is a `NavigationEvent` rather than a `RequestEvent`.
+> 如果是 `src/hooks.client.js`,  `handleError` 的类型是 `HandleClientError` 而非 `HandleServerError`, 且 `event` 是 `NavigationEvent`类型 而非`RequestEvent`类型。
 
-This function is not called for _expected_ errors (those thrown with the [`error`](/docs/modules#sveltejs-kit-error) function imported from `@sveltejs/kit`).
+请注意，如果是可预取的错误，该hook是不会调用的。
+（可预期的错误指的是从`@sveltejs/kit`包的[`error`](/docs/modules#sveltejs-kit-error)函数抛出的错误）
 
-During development, if an error occurs because of a syntax error in your Svelte code, the passed in error has a `frame` property appended highlighting the location of the error.
+在开发模式下，如果是因为你的svelte代码有语法错误抛出的错误，error对象会有一个`frame`属性，显示错误发生的位置。
